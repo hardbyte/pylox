@@ -31,7 +31,7 @@ def repl(stdin, stdout):
 
     while True:
         stdout.write("> ")
-        LINE_BUFFER_LENGTH = 1024
+        LINE_BUFFER_LENGTH = 4096
         next_line = stdin.readline(LINE_BUFFER_LENGTH)
         if not next_line:
             break
