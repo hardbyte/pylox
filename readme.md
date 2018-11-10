@@ -1092,3 +1092,87 @@ $ calc
 
 Cool beans, 605 virtual machine instructions to compute pi to 1dp!
 
+## JIT the VM
+
+The only other thing which I'd like to cover is revisting our vm's main loop
+and adding the hooks that allow RPython to swoop in and JIT our code.
+
+Some preliminaries:
+
+```python
+from rpython.rlib.jit import JitDriver
+from rpython.jit.codewriter.policy import JitPolicy
+
+def jitpolicy(driver):
+    return JitPolicy()
+
+```
+
+Then revisit our `VM._run` method and at the top simply add this:
+
+```python
+    def _run(self):
+        instruction = OpCode.OP_CONSTANT
+        while True:
+            jitdriver.jit_merge_point(
+                ip=self.ip,
+                chunk=self.chunk,
+                stack=self.stack,
+                stack_top=self.stack_top,
+                instruction=instruction,
+                vm=self
+            )
+```
+
+The jit driver can be defined at the top of `vm.py`. Here we tell 
+RPython what variables are stable or "green", and what variables 
+it should consider unstable or "red". This is what I came up with:
+
+```python
+jitdriver = JitDriver(
+    greens=['ip', 'instruction', 'chunk', 'vm'],
+    reds=['stack_top', 'stack']
+)
+```
+
+Now translate with `rpython --opt=jit` and wait a few minutes and enjoy
+the fractals from the translator while the compilation finishs. Probably 
+a good time to support executing from a file instead of in a repl too:
+
+```python
+def runFile(filename):
+    source = read_file(filename)
+    vm = VM(debug=False)
+    try:
+        result = vm.interpret(source)
+        print IntepretResultToName[result]
+        if result == IntepretResultCode.INTERPRET_COMPILE_ERROR:
+            print "Compile error"
+        elif result == IntepretResultCode.INTERPRET_RUNTIME_ERROR:
+            print "Runtime error"
+    except ValueError:
+        print "Unhandled exception in runFile"
+
+
+def read_file(filename):
+    try:
+        file = rfile.create_file(filename, 'r')
+    except IOError:
+        print "Error opening file"
+        raise SystemExit(74)
+    source = file.read()
+    return source
+
+
+def entry_point(argv):
+    if len(argv) > 1:
+        runFile(argv[1])
+    elif len(argv) == 1:
+        repl()
+    else:
+        print "Usage: calc [path]"
+        raise SystemExit(64)
+    return 0
+```
+
+
