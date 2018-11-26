@@ -41,6 +41,7 @@ class Value(object):
     def is_number(self):
         return self.type == ValueType.NUMBER
 
+
 class ValueArray(object):
     def __init__(self):
         self.values = []

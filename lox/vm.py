@@ -48,14 +48,15 @@ class VM(object):
         self.debug_trace = debug
         self._reset_stack()
 
-    def _runtime_error(self, message, **kwargs):
+    def _runtime_error(self, message):
         # Print the line number
         line_number = format_line_number(self.chunk, self.ip),
         print "%s\n[line %s] in script" % (message, line_number)
         self._reset_stack()
 
     def _reset_stack(self):
-        self.stack = [0] * self.STACK_MAX_SIZE
+        nil_value = Value(0, ValueType.NIL)
+        self.stack = [nil_value] * self.STACK_MAX_SIZE
         self.stack_top = 0
 
     def _stack_push(self, value):
@@ -91,7 +92,7 @@ class VM(object):
             instruction = self._read_byte()
 
             if instruction == OpCode.OP_RETURN:
-                print "%s" % self._stack_pop()
+                print "%s" % self._stack_pop().debug_repr()
                 return IntepretResultCode.INTERPRET_OK
             elif instruction == OpCode.OP_CONSTANT:
                 lox_value = self._read_constant()
@@ -165,12 +166,14 @@ class VM(object):
         # already a lox value
         return self.chunk.constants[constant_index]
 
-
     def print_value(self, constant):
         print "value: %f" % constant.value
 
     @specialize.arg(1)
     def _binary_op(self, operator, value_type):
+        if not self._stack_peek().is_number() or not self._stack_peek(1).is_number():
+            self._runtime_error("Operands must be numbers.")
+            raise Exception("INTERPRET_RUNTIME_ERROR")
         op2 = self._stack_pop()
         op1 = self._stack_pop()
         raw_result = operator(op1.value, op2.value)
