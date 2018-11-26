@@ -1,16 +1,26 @@
 
+class ValueType:
+    BOOL = 0
+    NIL = 1
+    NUMBER = 2
+
 
 class Value(object):
     """
-    Boxing of values.
+    Boxing of different primitive values.
 
     """
-    def __init__(self, value):
+    def __init__(self, value, value_type):
         self.value = value
+        self.type = value_type
 
     def debug_repr(self):
-        if isinstance(self.value, float):
+        if self.type == ValueType.NUMBER:
             return ("%f" % self.value)[:16]
+        elif self.type == ValueType.BOOL:
+            return "true" if self.value else "false"
+        elif self.type == ValueType.NIL:
+            return "nil"
         else:
             return str(self.value)
 
@@ -18,8 +28,18 @@ class Value(object):
         return "<Value: '%s'>" % self.value
 
     def __eq__(self, other):
+        if self.type == ValueType.NIL or self.type != other.type:
+            return False
         return self.value == other.value
 
+    def is_bool(self):
+        return self.type == ValueType.BOOL
+
+    def is_nil(self):
+        return self.type == ValueType.NIL
+
+    def is_number(self):
+        return self.type == ValueType.NUMBER
 
 class ValueArray(object):
     def __init__(self):

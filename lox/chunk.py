@@ -1,5 +1,5 @@
 from lox.debug import disassemble_instruction
-from lox.value import Value, ValueArray
+from lox.value import Value, ValueArray, ValueType
 
 
 class Linesman(object):
@@ -54,7 +54,7 @@ class Chunk:
 
     def add_constant(self, value):
         if not isinstance(value, Value):
-            value = Value(value)
+            value = Value(value, ValueType.NUMBER)
 
         # See if we already know this constant
         try:

@@ -1,6 +1,7 @@
 # coding=utf-8
 from lox import Chunk, OpCode
-from lox.scanner import Scanner, TokenTypes, TokenTypeToName
+from lox.scanner import Scanner, TokenTypes
+from lox.value import Value, ValueType
 
 
 class Parser(object):
@@ -181,8 +182,9 @@ class Compiler(object):
             infix_method(self)
 
     def number(self):
-        value = float(self.scanner.get_token_string(self.parser.previous))
-        self._emit_constant(value)
+        float_value = float(self.scanner.get_token_string(self.parser.previous))
+        lox_value = Value(float_value, ValueType.NUMBER)
+        self._emit_constant(lox_value)
 
     def expression(self):
         self.parse_precedence(Precedence.ASSIGNMENT)

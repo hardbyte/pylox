@@ -1,3 +1,6 @@
+from lox.value import ValueType, Value
+from rpython.rlib.objectmodel import specialize
+
 try:
     from rpython.rlib.jit import JitDriver
 except ImportError:
@@ -7,14 +10,14 @@ except ImportError:
         def can_enter_jit(self,**kw): pass
 
 from lox import OpCode, Compiler
-from lox.debug import disassemble_instruction, get_printable_location
-
+from lox.debug import disassemble_instruction, get_printable_location, format_line_number
 
 jitdriver = JitDriver(
     greens=['ip', 'instruction', 'chunk', 'vm'],
     reds=['stack_top', 'stack'],
     get_printable_location=get_printable_location
 )
+
 
 class IntepretResultCode:
     """
@@ -45,6 +48,12 @@ class VM(object):
         self.debug_trace = debug
         self._reset_stack()
 
+    def _runtime_error(self, message, **kwargs):
+        # Print the line number
+        line_number = format_line_number(self.chunk, self.ip),
+        print "%s\n[line %s] in script" % (message, line_number)
+        self._reset_stack()
+
     def _reset_stack(self):
         self.stack = [0] * self.STACK_MAX_SIZE
         self.stack_top = 0
@@ -58,6 +67,11 @@ class VM(object):
         assert self.stack_top >= 0
         self.stack_top -= 1
         return self.stack[self.stack_top]
+
+    def _stack_peek(self, distance=0):
+        assert self.stack_top >= 0
+        assert self.stack_top - distance > 0
+        return self.stack[self.stack_top - 1 - distance]
 
     def _run(self):
         instruction = OpCode.OP_TEST
@@ -80,20 +94,22 @@ class VM(object):
                 print "%s" % self._stack_pop()
                 return IntepretResultCode.INTERPRET_OK
             elif instruction == OpCode.OP_CONSTANT:
-                constant = self._read_constant()
-                self._stack_push(constant.value)
-            elif instruction == OpCode.OP_NEGATE:
-                operand = self._stack_pop()
-                operand *= -1
-                self._stack_push(operand)
+                lox_value = self._read_constant()
+                self._stack_push(lox_value)
             elif instruction == OpCode.OP_ADD:
-                self._binary_op(self._stack_add)
+                self._binary_op(self._stack_add, ValueType.NUMBER)
             elif instruction == OpCode.OP_SUBTRACT:
-                self._binary_op(self._stack_subtract)
+                self._binary_op(self._stack_subtract, ValueType.NUMBER)
             elif instruction == OpCode.OP_MULTIPLY:
-                self._binary_op(self._stack_multiply)
+                self._binary_op(self._stack_multiply, ValueType.NUMBER)
             elif instruction == OpCode.OP_DIVIDE:
-                self._binary_op(self._stack_divide)
+                self._binary_op(self._stack_divide, ValueType.NUMBER)
+            elif instruction == OpCode.OP_NEGATE:
+                if not self._stack_peek().is_number():
+                    self._runtime_error("Operand must be a number.")
+                    return IntepretResultCode.INTERPRET_RUNTIME_ERROR
+                operand = self._stack_pop().value
+                self._stack_push(Value(-1 * operand, ValueType.NUMBER))
 
     def _print_stack(self):
         print "         ",
@@ -101,7 +117,7 @@ class VM(object):
             print "[]",
         else:
             for i in range(self.stack_top):
-                print "[ %s ]" % self.stack[i],
+                print "[ %s ]" % self.stack[i].value,
         print
 
     @staticmethod
@@ -146,13 +162,17 @@ class VM(object):
 
     def _read_constant(self):
         constant_index = self._read_byte()
+        # already a lox value
         return self.chunk.constants[constant_index]
+
 
     def print_value(self, constant):
         print "value: %f" % constant.value
 
-    def _binary_op(self, operator):
+    @specialize.arg(1)
+    def _binary_op(self, operator, value_type):
         op2 = self._stack_pop()
         op1 = self._stack_pop()
-        result = operator(op1, op2)
-        self._stack_push(result)
+        raw_result = operator(op1.value, op2.value)
+        lox_value = Value(raw_result, value_type)
+        self._stack_push(lox_value)
