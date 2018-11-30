@@ -136,7 +136,7 @@ class VM(object):
             print "[]",
         else:
             for i in range(self.stack_top):
-                print "[ %s ]" % self.stack[i].value,
+                print "[ %s ]" % self.stack[i].debug_repr(),
         print
 
     @staticmethod
