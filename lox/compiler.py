@@ -73,14 +73,14 @@ class Compiler(object):
         if self.parser.panic_mode:
             # suppress subsequent errors
             return
-        print "[line %d] Error" % token.line
+        print "[line %d] Error" % token.line,
 
         if token.type == TokenTypes.EOF:
             print " at end"
         elif token.type == TokenTypes.ERROR:
             pass
         else:
-            print " at %s" % self.scanner.get_token_string(token)
+            print " at '%s'" % self.scanner.get_token_string(token)
         print ": %s\n" % msg
 
         self.parser.had_error = True
@@ -142,6 +142,15 @@ class Compiler(object):
         self.expression()
         self.consume(TokenTypes.RIGHT_PAREN, "Expected ')' after expression.")
 
+    def literal(self):
+        op_type = self.parser.previous.type
+        if op_type == TokenTypes.FALSE:
+            self.emit_byte(OpCode.OP_FALSE)
+        elif op_type == TokenTypes.NIL:
+            self.emit_byte(OpCode.OP_NIL)
+        elif op_type == TokenTypes.TRUE:
+            self.emit_byte(OpCode.OP_TRUE)
+
     def unary(self):
         op_type = self.parser.previous.type
         # Compile the operand
@@ -179,7 +188,10 @@ class Compiler(object):
         while precedence <= self._get_rule(self.parser.current.type).precedence:
             self.advance()
             infix_method = self._get_rule(self.parser.previous.type).infix
-            infix_method(self)
+            if infix_method is not None:
+                infix_method(self)
+            else:
+                self.error("Compiler Error - Non implemented expression")
 
     def number(self):
         float_value = float(self.scanner.get_token_string(self.parser.previous))
@@ -222,17 +234,17 @@ rules = [
     ParseRule(None,                 None,               Precedence.AND),         # TOKEN_AND
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_CLASS
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_ELSE
-    ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_FALSE
+    ParseRule(Compiler.literal,     None,               Precedence.NONE),        # TOKEN_FALSE
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_FUN
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_FOR
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_IF
-    ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_NIL
+    ParseRule(Compiler.literal,     None,               Precedence.NONE),        # TOKEN_NIL
     ParseRule(None,                 None,               Precedence.OR),          # TOKEN_OR
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_PRINT
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_RETURN
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_SUPER
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_THIS
-    ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_TRUE
+    ParseRule(Compiler.literal,     None,               Precedence.NONE),        # TOKEN_TRUE
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_VAR
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_WHILE
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_ERROR

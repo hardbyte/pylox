@@ -55,8 +55,8 @@ class VM(object):
         self._reset_stack()
 
     def _reset_stack(self):
-        nil_value = Value(0, ValueType.NIL)
-        self.stack = [nil_value] * self.STACK_MAX_SIZE
+        self._nil_value = Value(0, ValueType.NIL)
+        self.stack = [self._nil_value] * self.STACK_MAX_SIZE
         self.stack_top = 0
 
     def _stack_push(self, value):
@@ -97,6 +97,13 @@ class VM(object):
             elif instruction == OpCode.OP_CONSTANT:
                 lox_value = self._read_constant()
                 self._stack_push(lox_value)
+            elif instruction == OpCode.OP_NIL:
+                self._stack_push(self._nil_value)
+            elif instruction == OpCode.OP_TRUE:
+                self._stack_push(Value(True, ValueType.BOOL))
+            elif instruction == OpCode.OP_FALSE:
+                self._stack_push(Value(False, ValueType.BOOL))
+
             elif instruction == OpCode.OP_ADD:
                 self._binary_op(self._stack_add, ValueType.NUMBER)
             elif instruction == OpCode.OP_SUBTRACT:

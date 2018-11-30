@@ -13,6 +13,9 @@ class OpCode:
     OP_SUBTRACT = 5
     OP_MULTIPLY = 6
     OP_DIVIDE = 7
+    OP_NIL = 8
+    OP_TRUE = 9
+    OP_FALSE = 10
 
     BinaryOps = {
         OP_ADD: "+",

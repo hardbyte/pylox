@@ -74,6 +74,12 @@ def format_instruction_extended(chunk, instruction, instruction_name, offset):
 
     if instruction == OpCode.OP_CONSTANT:
         repr, ip = constant_instruction(instruction_name, chunk, offset)
+    elif instruction == OpCode.OP_FALSE:
+        repr = "FALSE"
+        ip = offset + 1
+    elif instruction == OpCode.OP_TRUE:
+        repr = "TRUE"
+        ip = offset + 1
     elif instruction in OpCode.BinaryOps:
         repr, ip = binary_instruction(instruction_name, chunk, offset)
     else:
