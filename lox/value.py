@@ -27,8 +27,8 @@ class Value(object):
     def __repr__(self):
         return "<Value: '%s'>" % self.value
 
-    def __eq__(self, other):
-        if self.type == ValueType.NIL or self.type != other.type:
+    def is_equal(self, other):
+        if self.type != other.type:
             return False
         return self.value == other.value
 
@@ -40,6 +40,15 @@ class Value(object):
 
     def is_number(self):
         return self.type == ValueType.NUMBER
+
+    def is_falsey(self):
+        if self.is_bool():
+            return not self.value
+        elif self.is_nil():
+            return True
+        else:
+            return False
+
 
 
 class ValueArray(object):

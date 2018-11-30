@@ -103,7 +103,10 @@ class VM(object):
                 self._stack_push(Value(True, ValueType.BOOL))
             elif instruction == OpCode.OP_FALSE:
                 self._stack_push(Value(False, ValueType.BOOL))
-
+            elif instruction == OpCode.OP_NOT:
+                value = self._stack_pop()
+                is_falsey = value.is_falsey()
+                self._stack_push(Value(is_falsey, ValueType.BOOL))
             elif instruction == OpCode.OP_ADD:
                 self._binary_op(self._stack_add, ValueType.NUMBER)
             elif instruction == OpCode.OP_SUBTRACT:
@@ -112,12 +115,20 @@ class VM(object):
                 self._binary_op(self._stack_multiply, ValueType.NUMBER)
             elif instruction == OpCode.OP_DIVIDE:
                 self._binary_op(self._stack_divide, ValueType.NUMBER)
+            elif instruction == OpCode.OP_GREATER:
+                self._binary_op(self._stack_greater, ValueType.BOOL)
+            elif instruction == OpCode.OP_LESS:
+                self._binary_op(self._stack_less, ValueType.BOOL)
             elif instruction == OpCode.OP_NEGATE:
                 if not self._stack_peek().is_number():
                     self._runtime_error("Operand must be a number.")
                     return IntepretResultCode.INTERPRET_RUNTIME_ERROR
                 operand = self._stack_pop().value
                 self._stack_push(Value(-1 * operand, ValueType.NUMBER))
+            elif instruction == OpCode.OP_EQUAL:
+                b = self._stack_pop()
+                a = self._stack_pop()
+                self._stack_push(Value(a.is_equal(b), ValueType.BOOL))
 
     def _print_stack(self):
         print "         ",
@@ -143,6 +154,14 @@ class VM(object):
     @staticmethod
     def _stack_divide(op1, op2):
         return op1 / op2
+
+    @staticmethod
+    def _stack_greater(op1, op2):
+        return op1 > op2
+
+    @staticmethod
+    def _stack_less(op1, op2):
+        return op1 < op2
 
     def interpret(self, source):
         self._reset_stack()

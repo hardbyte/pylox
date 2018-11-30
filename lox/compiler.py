@@ -158,6 +158,8 @@ class Compiler(object):
         # Emit the operator instruction
         if op_type == TokenTypes.MINUS:
             self.emit_byte(OpCode.OP_NEGATE)
+        elif op_type == TokenTypes.BANG:
+            self.emit_byte(OpCode.OP_NOT)
 
     def binary(self):
         op_type = self.parser.previous.type
@@ -174,6 +176,13 @@ class Compiler(object):
         if op_type == TokenTypes.MINUS: self.emit_byte(OpCode.OP_SUBTRACT)
         if op_type == TokenTypes.STAR: self.emit_byte(OpCode.OP_MULTIPLY)
         if op_type == TokenTypes.SLASH: self.emit_byte(OpCode.OP_DIVIDE)
+        if op_type == TokenTypes.BANG_EQUAL: self.emit_bytes(OpCode.OP_EQUAL, OpCode.OP_NOT)
+        if op_type == TokenTypes.EQUAL_EQUAL: self.emit_byte(OpCode.OP_EQUAL)
+        if op_type == TokenTypes.GREATER: self.emit_byte(OpCode.OP_GREATER)
+        if op_type == TokenTypes.GREATER_EQUAL: self.emit_bytes(OpCode.OP_LESS, OpCode.OP_NOT)
+        if op_type == TokenTypes.LESS: self.emit_byte(OpCode.OP_LESS)
+        if op_type == TokenTypes.LESS_EQUAL: self.emit_bytes(OpCode.OP_GREATER, OpCode.OP_NOT)
+
 
     def parse_precedence(self, precedence):
         # parses any expression of a given precedence level or higher
@@ -220,14 +229,14 @@ rules = [
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_SEMICOLON
     ParseRule(None,                 Compiler.binary,    Precedence.FACTOR),      # TOKEN_SLASH
     ParseRule(None,                 Compiler.binary,    Precedence.FACTOR),      # TOKEN_STAR
-    ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_BANG
-    ParseRule(None,                 None,               Precedence.EQUALITY),    # TOKEN_BANG_EQUAL
+    ParseRule(Compiler.unary,       None,               Precedence.NONE),        # TOKEN_BANG
+    ParseRule(None,                 Compiler.binary,    Precedence.EQUALITY),    # TOKEN_BANG_EQUAL
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_EQUAL
-    ParseRule(None,                 None,               Precedence.EQUALITY),    # TOKEN_EQUAL_EQUAL
-    ParseRule(None,                 None,               Precedence.COMPARISON),  # TOKEN_GREATER
-    ParseRule(None,                 None,               Precedence.COMPARISON),  # TOKEN_GREATER_EQUAL
-    ParseRule(None,                 None,               Precedence.COMPARISON),  # TOKEN_LESS
-    ParseRule(None,                 None,               Precedence.COMPARISON),  # TOKEN_LESS_EQUAL
+    ParseRule(None,                 Compiler.binary,    Precedence.EQUALITY),    # TOKEN_EQUAL_EQUAL
+    ParseRule(None,                 Compiler.binary,    Precedence.COMPARISON),  # TOKEN_GREATER
+    ParseRule(None,                 Compiler.binary,    Precedence.COMPARISON),  # TOKEN_GREATER_EQUAL
+    ParseRule(None,                 Compiler.binary,    Precedence.COMPARISON),  # TOKEN_LESS
+    ParseRule(None,                 Compiler.binary,    Precedence.COMPARISON),  # TOKEN_LESS_EQUAL
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_IDENTIFIER
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_STRING
     ParseRule(Compiler.number,      None,               Precedence.NONE),        # TOKEN_NUMBER
