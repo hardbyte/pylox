@@ -1,7 +1,8 @@
 # coding=utf-8
 from lox import Chunk, OpCode
+from lox.object import ObjString
 from lox.scanner import Scanner, TokenTypes
-from lox.value import Value, ValueType
+from lox.value import PrimitiveNumberValue, PrimitiveObjValue
 
 
 class Parser(object):
@@ -204,7 +205,13 @@ class Compiler(object):
 
     def number(self):
         float_value = float(self.scanner.get_token_string(self.parser.previous))
-        lox_value = Value(float_value, ValueType.NUMBER)
+        lox_value = PrimitiveNumberValue(float_value)
+        self._emit_constant(lox_value)
+
+    def string(self):
+        string_value = self.scanner.get_token_string(self.parser.previous)
+        string_object = ObjString(string_value)
+        lox_value = PrimitiveObjValue(string_object)
         self._emit_constant(lox_value)
 
     def expression(self):
@@ -238,7 +245,7 @@ rules = [
     ParseRule(None,                 Compiler.binary,    Precedence.COMPARISON),  # TOKEN_LESS
     ParseRule(None,                 Compiler.binary,    Precedence.COMPARISON),  # TOKEN_LESS_EQUAL
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_IDENTIFIER
-    ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_STRING
+    ParseRule(Compiler.string,      None,               Precedence.NONE),        # TOKEN_STRING
     ParseRule(Compiler.number,      None,               Precedence.NONE),        # TOKEN_NUMBER
     ParseRule(None,                 None,               Precedence.AND),         # TOKEN_AND
     ParseRule(None,                 None,               Precedence.NONE),        # TOKEN_CLASS

@@ -30,7 +30,7 @@ def binary_instruction(name, chunk, offset):
 def format_constant(name, chunk, constant):
     return "(%s) %s" % (
         leftpad_string("%d" % constant, 2, '0'),
-        leftpad_string("'%s'" % chunk.constants[constant].debug_repr(), 10)
+        leftpad_string("'%s'" % chunk.constants[constant].repr(), 10)
     )
 
 

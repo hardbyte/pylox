@@ -1,4 +1,4 @@
-from lox.value import ValueType, Value
+from lox.value import ValueType, Value, PrimitiveNilValue
 from rpython.rlib.objectmodel import specialize
 
 try:
@@ -55,7 +55,7 @@ class VM(object):
         self._reset_stack()
 
     def _reset_stack(self):
-        self._nil_value = Value(0, ValueType.NIL)
+        self._nil_value = PrimitiveNilValue()
         self.stack = [self._nil_value] * self.STACK_MAX_SIZE
         self.stack_top = 0
 
@@ -92,7 +92,7 @@ class VM(object):
             instruction = self._read_byte()
 
             if instruction == OpCode.OP_RETURN:
-                print "%s" % self._stack_pop().debug_repr()
+                print "%s" % self._stack_pop().repr()
                 return IntepretResultCode.INTERPRET_OK
             elif instruction == OpCode.OP_CONSTANT:
                 lox_value = self._read_constant()
@@ -100,13 +100,13 @@ class VM(object):
             elif instruction == OpCode.OP_NIL:
                 self._stack_push(self._nil_value)
             elif instruction == OpCode.OP_TRUE:
-                self._stack_push(Value(True, ValueType.BOOL))
+                self._stack_push(Value.new(True, ValueType.BOOL))
             elif instruction == OpCode.OP_FALSE:
-                self._stack_push(Value(False, ValueType.BOOL))
+                self._stack_push(Value.new(False, ValueType.BOOL))
             elif instruction == OpCode.OP_NOT:
                 value = self._stack_pop()
                 is_falsey = value.is_falsey()
-                self._stack_push(Value(is_falsey, ValueType.BOOL))
+                self._stack_push(Value.new(is_falsey, ValueType.BOOL))
             elif instruction == OpCode.OP_ADD:
                 self._binary_op(self._stack_add, ValueType.NUMBER)
             elif instruction == OpCode.OP_SUBTRACT:
@@ -124,11 +124,11 @@ class VM(object):
                     self._runtime_error("Operand must be a number.")
                     return IntepretResultCode.INTERPRET_RUNTIME_ERROR
                 operand = self._stack_pop().value
-                self._stack_push(Value(-1 * operand, ValueType.NUMBER))
+                self._stack_push(Value.new(-1 * operand, ValueType.NUMBER))
             elif instruction == OpCode.OP_EQUAL:
                 b = self._stack_pop()
                 a = self._stack_pop()
-                self._stack_push(Value(a.is_equal(b), ValueType.BOOL))
+                self._stack_push(Value.new(a.is_equal(b), ValueType.BOOL))
 
     def _print_stack(self):
         print "         ",
@@ -136,7 +136,7 @@ class VM(object):
             print "[]",
         else:
             for i in range(self.stack_top):
-                print "[ %s ]" % self.stack[i].debug_repr(),
+                print "[ %s ]" % self.stack[i].repr(),
         print
 
     @staticmethod
@@ -203,5 +203,5 @@ class VM(object):
         op2 = self._stack_pop()
         op1 = self._stack_pop()
         raw_result = operator(op1.value, op2.value)
-        lox_value = Value(raw_result, value_type)
+        lox_value = Value.new(raw_result, value_type)
         self._stack_push(lox_value)
