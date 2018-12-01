@@ -25,14 +25,18 @@ class ObjString(Obj):
 
     def __init__(self, value):
         self.type = ObjType.STRING
-        self.buffer = StringBuffer(value)
+        self.buffer = value #StringBuffer(value)
         self.length = len(value)
 
     def repr(self):
-        return self.buffer.value
+        return self.buffer
 
     def is_equal(self, other):
         if self.type != other.type:
             return False
-        return self.buffer.value == other.buffer.value
+        return self.buffer == other.buffer
+
+    def concat(self, other):
+
+        return ObjString(self.buffer + other.buffer)
 

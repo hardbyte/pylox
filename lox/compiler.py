@@ -184,7 +184,6 @@ class Compiler(object):
         if op_type == TokenTypes.LESS: self.emit_byte(OpCode.OP_LESS)
         if op_type == TokenTypes.LESS_EQUAL: self.emit_bytes(OpCode.OP_GREATER, OpCode.OP_NOT)
 
-
     def parse_precedence(self, precedence):
         # parses any expression of a given precedence level or higher
         self.advance()
@@ -210,7 +209,10 @@ class Compiler(object):
 
     def string(self):
         string_value = self.scanner.get_token_string(self.parser.previous)
-        string_object = ObjString(string_value)
+        # slice off the quotes
+        slice_end = len(string_value) - 1
+        assert slice_end > 0
+        string_object = ObjString(string_value[1:slice_end])
         lox_value = PrimitiveObjValue(string_object)
         self._emit_constant(lox_value)
 

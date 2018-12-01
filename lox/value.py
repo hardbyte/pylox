@@ -13,17 +13,17 @@ class Value(object):
     Boxing of different primitive values.
     See object.py for dynamic objects such as strings.
     """
-    @staticmethod
-    def new(value, value_type):
+
+    def __init__(self, value, value_type):
         if value_type == ValueType.BOOL:
-            return PrimitiveBoolValue(value)
+            PrimitiveBoolValue.__init__(self, value)
         elif value_type == ValueType.NIL:
-            return PrimitiveNilValue()
+            PrimitiveNilValue.__init__(self)
         elif value_type == ValueType.NUMBER:
-            return PrimitiveNumberValue(value)
+            PrimitiveNumberValue.__init__(self, value)
         elif value_type == ValueType.OBJ:
             assert isinstance(value, Obj)
-            return PrimitiveObjValue(value)
+            PrimitiveObjValue.__init__(self, value)
 
     def repr(self):
         if self.is_number():
@@ -50,6 +50,9 @@ class Value(object):
     def is_obj(self):
         return self.type == ValueType.OBJ
 
+    def is_string(self):
+        return self.type == ValueType.OBJ
+
     def is_falsey(self):
         if self.is_bool():
             return not self.value
@@ -72,8 +75,8 @@ class PrimitiveNumberValue(Value):
     Only used for primitive values.
     """
 
-    def __init__(self, value):
-        self.type = ValueType.NUMBER
+    def __init__(self, value, type=ValueType.NUMBER):
+        self.type = type
         self.value = value
 
 
@@ -82,8 +85,8 @@ class PrimitiveBoolValue(Value):
     Only used for primitive Boolean values
     """
 
-    def __init__(self, value):
-        self.type = ValueType.BOOL
+    def __init__(self, value, type=ValueType.BOOL):
+        self.type = type
         self.value = value
 
 
@@ -92,8 +95,8 @@ class PrimitiveNilValue(Value):
     Only used for primitive values.
     """
 
-    def __init__(self):
-        self.type = ValueType.NIL
+    def __init__(self, value=None, type=ValueType.NIL):
+        self.type = type
 
 
 class PrimitiveObjValue(Value):
@@ -101,8 +104,8 @@ class PrimitiveObjValue(Value):
     Only used for primitive values.
     """
 
-    def __init__(self, value):
-        self.type = ValueType.OBJ
+    def __init__(self, value, type=ValueType.OBJ):
+        self.type = type
         self.obj = value
 
     def is_equal(self, other):

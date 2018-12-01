@@ -1,4 +1,4 @@
-from lox.value import ValueType, Value, PrimitiveNilValue
+from lox.value import ValueType, Value, PrimitiveNilValue, PrimitiveObjValue
 from rpython.rlib.objectmodel import specialize
 
 try:
@@ -100,15 +100,27 @@ class VM(object):
             elif instruction == OpCode.OP_NIL:
                 self._stack_push(self._nil_value)
             elif instruction == OpCode.OP_TRUE:
-                self._stack_push(Value.new(True, ValueType.BOOL))
+                self._stack_push(Value(True, ValueType.BOOL))
             elif instruction == OpCode.OP_FALSE:
-                self._stack_push(Value.new(False, ValueType.BOOL))
+                self._stack_push(Value(False, ValueType.BOOL))
             elif instruction == OpCode.OP_NOT:
                 value = self._stack_pop()
                 is_falsey = value.is_falsey()
-                self._stack_push(Value.new(is_falsey, ValueType.BOOL))
+                self._stack_push(Value(is_falsey, ValueType.BOOL))
             elif instruction == OpCode.OP_ADD:
-                self._binary_op(self._stack_add, ValueType.NUMBER)
+                op2 = self._stack_pop()
+                op1 = self._stack_pop()
+                if op1.is_number() and op2.is_number():
+                    raw_result = op1.value + op2.value
+                    lox_value = Value(raw_result, ValueType.NUMBER)
+                elif op1.is_string() and op2.is_string():
+                    string_object = op1.obj.concat(op2.obj)
+                    lox_value = PrimitiveObjValue(string_object)
+                else:
+                    self._runtime_error("Operands must both be numbers or strings.")
+                    raise Exception("INTERPRET_RUNTIME_ERROR")
+                self._stack_push(lox_value)
+
             elif instruction == OpCode.OP_SUBTRACT:
                 self._binary_op(self._stack_subtract, ValueType.NUMBER)
             elif instruction == OpCode.OP_MULTIPLY:
@@ -124,11 +136,11 @@ class VM(object):
                     self._runtime_error("Operand must be a number.")
                     return IntepretResultCode.INTERPRET_RUNTIME_ERROR
                 operand = self._stack_pop().value
-                self._stack_push(Value.new(-1 * operand, ValueType.NUMBER))
+                self._stack_push(Value(-1 * operand, ValueType.NUMBER))
             elif instruction == OpCode.OP_EQUAL:
                 b = self._stack_pop()
                 a = self._stack_pop()
-                self._stack_push(Value.new(a.is_equal(b), ValueType.BOOL))
+                self._stack_push(Value(a.is_equal(b), ValueType.BOOL))
 
     def _print_stack(self):
         print "         ",
@@ -203,5 +215,5 @@ class VM(object):
         op2 = self._stack_pop()
         op1 = self._stack_pop()
         raw_result = operator(op1.value, op2.value)
-        lox_value = Value.new(raw_result, value_type)
+        lox_value = Value(raw_result, value_type)
         self._stack_push(lox_value)
