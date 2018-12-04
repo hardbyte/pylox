@@ -5,7 +5,6 @@ class ObjType:
      STRING = 0
 
 
-
 class Obj(object):
     """
     Base class of different dynamically allocated instances.

@@ -40,6 +40,8 @@ class VM(object):
     stack = None
     stack_top = 0
 
+    object_heap = []
+
     # Instruction Pointer (or Program Counter)
     # points to the next instruction to be executed
     ip = 0
@@ -115,6 +117,7 @@ class VM(object):
                     lox_value = Value(raw_result, ValueType.NUMBER)
                 elif op1.is_string() and op2.is_string():
                     string_object = op1.obj.concat(op2.obj)
+                    self.object_heap.append(string_object)
                     lox_value = PrimitiveObjValue(string_object)
                 else:
                     self._runtime_error("Operands must both be numbers or strings.")
@@ -190,6 +193,7 @@ class VM(object):
         self.ip = 0
         try:
             result = self._run()
+            self._free_vm()
             return result
         except:
             return IntepretResultCode.INTERPRET_RUNTIME_ERROR
@@ -217,3 +221,7 @@ class VM(object):
         raw_result = operator(op1.value, op2.value)
         lox_value = Value(raw_result, value_type)
         self._stack_push(lox_value)
+
+    def _free_vm(self):
+        for o in self.object_heap:
+            del o
