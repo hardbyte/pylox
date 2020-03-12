@@ -1,4 +1,4 @@
-from lox.object import Obj
+from lox.object import Obj, ObjType
 
 
 class ValueType:
@@ -51,7 +51,7 @@ class Value(object):
         return self.type == ValueType.OBJ
 
     def is_string(self):
-        return self.type == ValueType.OBJ
+        return self.type == ValueType.OBJ and self.obj.type == ObjType.STRING
 
     def is_falsey(self):
         if self.is_bool():

@@ -49,6 +49,7 @@ class VM(object):
     def __init__(self, debug=True):
         self.debug_trace = debug
         self._reset_stack()
+        self.object_heap = []
 
     def _runtime_error(self, message):
         # Print the line number
@@ -110,20 +111,7 @@ class VM(object):
                 is_falsey = value.is_falsey()
                 self._stack_push(Value(is_falsey, ValueType.BOOL))
             elif instruction == OpCode.OP_ADD:
-                op2 = self._stack_pop()
-                op1 = self._stack_pop()
-                if op1.is_number() and op2.is_number():
-                    raw_result = op1.value + op2.value
-                    lox_value = Value(raw_result, ValueType.NUMBER)
-                elif op1.is_string() and op2.is_string():
-                    string_object = op1.obj.concat(op2.obj)
-                    self.object_heap.append(string_object)
-                    lox_value = PrimitiveObjValue(string_object)
-                else:
-                    self._runtime_error("Operands must both be numbers or strings.")
-                    raise Exception("INTERPRET_RUNTIME_ERROR")
-                self._stack_push(lox_value)
-
+                self._add_instruction()
             elif instruction == OpCode.OP_SUBTRACT:
                 self._binary_op(self._stack_subtract, ValueType.NUMBER)
             elif instruction == OpCode.OP_MULTIPLY:
@@ -144,6 +132,21 @@ class VM(object):
                 b = self._stack_pop()
                 a = self._stack_pop()
                 self._stack_push(Value(a.is_equal(b), ValueType.BOOL))
+
+    def _add_instruction(self):
+        op2 = self._stack_pop()
+        op1 = self._stack_pop()
+        if op1.is_number() and op2.is_number():
+            raw_result = self._stack_add(op1.value, op2.value)
+            lox_value = Value(raw_result, ValueType.NUMBER)
+        elif op1.is_string() and op2.is_string():
+            string_object = op1.obj.concat(op2.obj)
+            self.object_heap.append(string_object)
+            lox_value = PrimitiveObjValue(string_object)
+        else:
+            self._runtime_error("Operands must both be numbers or strings.")
+            raise Exception("INTERPRET_RUNTIME_ERROR")
+        self._stack_push(lox_value)
 
     def _print_stack(self):
         print "         ",
@@ -212,14 +215,14 @@ class VM(object):
         print "value: %f" % constant.value
 
     @specialize.arg(1)
-    def _binary_op(self, operator, value_type):
+    def _binary_op(self, operator, result_value_type):
         if not self._stack_peek().is_number() or not self._stack_peek(1).is_number():
             self._runtime_error("Operands must be numbers.")
             raise Exception("INTERPRET_RUNTIME_ERROR")
         op2 = self._stack_pop()
         op1 = self._stack_pop()
         raw_result = operator(op1.value, op2.value)
-        lox_value = Value(raw_result, value_type)
+        lox_value = Value(raw_result, result_value_type)
         self._stack_push(lox_value)
 
     def _free_vm(self):

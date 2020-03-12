@@ -1,4 +1,4 @@
-from rpython.rlib.buffer import StringBuffer
+#from rpython.rlib.buffer import StringBuffer
 
 
 class ObjType:
@@ -35,7 +35,10 @@ class ObjString(Obj):
             return False
         return self.buffer == other.buffer
 
-    def concat(self, other):
+    def cmp_less(self, other):
+        assert self.type == other.type
+        return self.buffer < other.buffer
 
+    def concat(self, other):
         return ObjString(self.buffer + other.buffer)
 
